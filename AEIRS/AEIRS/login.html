@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AEIRS - Login</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* =========================================
+       THEMING & VARIABLES
+       ========================================= */
+    :root {
+      /* Default DARK Theme */
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --primary-light: #8b5cf6;
+      --secondary: #10b981;
+      --accent: #f59e0b;
+      --accent-pink: #ec4899;
+      --accent-purple: #a855f7;
+      
+      --bg: #0f172a;
+      --bg-elevated: #1e293b;
+      --bg-card: rgba(30, 41, 59, 0.9);
+      --bg-input: #1e293b;
+      --border: #334155;
+      --border-light: #475569;
+      
+      --text-main: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+      --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+      --glow: 0 0 20px rgba(99, 102, 241, 0.3);
+
+      --radius: 12px;
+      --radius-lg: 16px;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* LIGHT Theme Overrides */
+    [data-theme="light"] {
+        --bg: #f0f2f5;
+        --bg-elevated: #ffffff;
+        --bg-card: rgba(255, 255, 255, 0.95);
+        --bg-input: #f8fafc;
+        --border: #e2e8f0;
+        --border-light: #cbd5e1;
+        
+        --text-main: #1e293b;
+        --text-secondary: #475569;
+        --text-muted: #64748b;
+        
+        --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --glow: 0 0 15px rgba(99, 102, 241, 0.15);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text-main);
+      line-height: 1.6;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      /* === NEW ANIMATED BACKGROUND === */
+      background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #0f172a);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      transition: color 0.5s ease;
+    }
+
+    /* Light Mode Background Override */
+    [data-theme="light"] body {
+        background: linear-gradient(-45deg, #f0f9ff, #e0f2fe, #dbeafe, #eff6ff);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+    }
+
+    @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* =========================================
+       CUSTOM DAY/NIGHT TOGGLE CSS
+       ========================================= */
+    .theme-toggle-absolute {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 10;
+    }
+
+    .theme-switch {
+        position: relative;
+        width: 60px;
+        height: 30px;
+        border-radius: 20px;
+        background-color: #1a1a2e;
+        cursor: pointer;
+        border: 2px solid var(--border);
+        overflow: hidden;
+        transition: background-color 0.5s cubic-bezier(0.4, 0.0, 0.2, 1), border-color 0.5s ease;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.4);
+        display: block;
+    }
+
+    .theme-switch input {
+        display: none;
+    }
+
+    /* The Circle (Sun/Moon Base) */
+    .toggle-circle {
+        position: absolute;
+        top: 2px;
+        left: 3px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background-color: #fdd835;
+        transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        box-shadow: 0 0 8px rgba(253, 216, 53, 0.4);
+        z-index: 2;
+        overflow: hidden; 
+    }
+
+    /* The Shadow that cuts the Moon Shape */
+    .toggle-circle::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background-color: #1a1a2e; /* Matches Night Sky */
+        transform: translate(35%, -35%); 
+        transition: transform 0.5s ease, background-color 0.5s ease;
+    }
+
+    /* Stars */
+    .star {
+        position: absolute;
+        background-color: #fff;
+        border-radius: 50%;
+        z-index: 1;
+        opacity: 1;
+        transition: all 0.4s ease;
+    }
+    .star-1 { top: 6px; left: 30px; width: 2px; height: 2px; }
+    .star-2 { top: 15px; left: 40px; width: 2px; height: 2px; }
+    .star-3 { top: 8px; left: 48px; width: 1px; height: 1px; }
+
+    /* Clouds */
+    .cloud {
+        position: absolute;
+        background: #fff;
+        border-radius: 10px;
+        opacity: 0;
+        z-index: 1;
+        transition: all 0.4s ease;
+        transform: translateY(10px);
+    }
+    .cloud-1 { top: 14px; left: 8px; width: 14px; height: 5px; }
+    .cloud-2 { top: 6px; left: 22px; width: 10px; height: 3px; }
+
+    /* --- CHECKED STATE (DAY MODE) --- */
+    .theme-switch input:checked + .slider-container {
+        background-color: #87CEEB; 
+    }
+    
+    .theme-switch input:checked + .slider-container .toggle-circle {
+        left: 32px;
+        background-color: #ffeb3b;
+        box-shadow: 0 0 15px rgba(255, 235, 59, 0.9);
+        transform: scale(1);
+    }
+
+    .theme-switch input:checked + .slider-container .toggle-circle::before {
+        transform: translate(100%, -100%); 
+        background-color: #87CEEB; 
+    }
+
+    .theme-switch input:checked + .slider-container .star {
+        opacity: 0;
+        transform: scale(0);
+    }
+
+    .theme-switch input:checked + .slider-container .cloud {
+        opacity: 0.9;
+        transform: translateY(0);
+    }
+
+    /* =========================================
+       EXISTING STYLES
+       ========================================= */
+
+    .login-container {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    .login-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      padding: 30px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.5s ease;
+    }
+
+    .login-card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .login-card:hover {
+      box-shadow: var(--shadow-lg), var(--glow);
+      transform: translateY(-5px);
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .logo {
+      width: 70px;
+      height: 70px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 28px;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+      margin: 0 auto 16px;
+      animation: pulse 2s infinite;
+      transition: var(--transition);
+    }
+
+    .logo:hover {
+      transform: rotate(10deg);
+    }
+
+    .login-header h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(to right, var(--text-main), var(--primary-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .login-header p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 14px 16px 14px 48px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--bg-input);
+      color: var(--text-main);
+      font-size: 0.95rem;
+      transition: var(--transition);
+      font-family: inherit;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      transition: var(--transition);
+    }
+
+    .form-input:focus + .input-icon {
+      color: var(--primary);
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .password-toggle:hover {
+      color: var(--primary);
+    }
+
+    .remember-forgot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      font-size: 0.85rem;
+    }
+
+    .remember-me {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+    }
+
+    .checkbox {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--bg-input);
+      position: relative;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .checkbox.checked {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .checkbox.checked::after {
+      content: '✓';
+      position: absolute;
+      color: white;
+      font-size: 12px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .forgot-password {
+      color: var(--primary);
+      text-decoration: none;
+      transition: var(--transition);
+    }
+
+    .forgot-password:hover {
+      color: var(--primary-light);
+      text-decoration: underline;
+    }
+
+    .login-button {
+      width: 100%;
+      padding: 14px;
+      border-radius: var(--radius);
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: var(--transition);
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.7s;
+    }
+
+    .login-button:hover::before {
+      left: 100%;
+    }
+
+    .login-button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+    }
+
+    .login-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 24px 0;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .divider span {
+      padding: 0 12px;
+    }
+
+    .social-login {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .social-button {
+      flex: 1;
+      padding: 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--bg-input);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.85rem;
+    }
+
+    .social-button:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .social-button.google:hover {
+      color: #DB4437;
+    }
+
+    .social-button.github:hover {
+      color: #f0f6fc;
+    }
+
+    .social-button.linkedin:hover {
+      color: #0A66C2;
+    }
+
+    .signup-link {
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .signup-link a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: var(--transition);
+    }
+
+    .signup-link a:hover {
+      color: var(--primary-light);
+      text-decoration: underline;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid transparent;
+      border-top: 2px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); }
+      50% { transform: scale(1.05); box-shadow: 0 4px 20px rgba(99, 102, 241, 0.6); }
+      100% { transform: scale(1); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); }
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .login-container {
+        padding: 16px;
+      }
+      
+      .login-card {
+        padding: 24px;
+      }
+      
+      .social-login {
+        flex-direction: column;
+      }
+      
+      .remember-forgot {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+        <div class="theme-toggle-absolute">
+            <label class="theme-switch" for="themeToggle">
+                <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+                <div class="slider-container" style="width:100%; height:100%; position:relative;">
+                    <div class="toggle-circle"></div>
+                    <div class="star star-1"></div>
+                    <div class="star star-2"></div>
+                    <div class="star star-3"></div>
+                    <div class="cloud cloud-1"></div>
+                    <div class="cloud cloud-2"></div>
+                </div>
+            </label>
+        </div>
+
+      <div class="login-header">
+        <div class="logo">
+          <i class="fas fa-robot"></i>
+        </div>
+        <h1>AEIRS</h1>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+        <label class="form-label" for="fullName">Full Name</label>
+        <div class="input-wrapper">
+            <input type="text" id="fullName" class="form-input" placeholder="Enter your full name" required>
+            <i class="fas fa-user input-icon"></i>
+        </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address</label>
+          <div class="input-wrapper">
+            <input type="email" id="email" class="form-input" placeholder="Enter your email" required>
+            <i class="fas fa-envelope input-icon"></i>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="input-wrapper">
+            <input type="password" id="password" class="form-input" placeholder="Enter your password" required>
+            <i class="fas fa-lock input-icon"></i>
+            <button type="button" class="password-toggle" id="passwordToggle">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="remember-forgot">
+          <div class="remember-me">
+            <div class="checkbox" id="rememberCheckbox"></div>
+            <span>Remember me</span>
+          </div>
+          <a href="#" class="forgot-password">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="login-button" id="loginButton">
+          <i class="fas fa-sign-in-alt"></i>
+          Sign In
+        </button>
+
+        <div class="signup-link">
+          Don't have an account? <a href="#">Sign up here</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // DOM Elements
+    const loginForm = document.getElementById('loginForm');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const passwordToggle = document.getElementById('passwordToggle');
+    const rememberCheckbox = document.getElementById('rememberCheckbox');
+    const loginButton = document.getElementById('loginButton');
+
+    // Initialize Theme on Load
+    document.addEventListener('DOMContentLoaded', () => {
+        loadThemePreference();
+    });
+
+    // === THEME TOGGLE LOGIC ===
+    function toggleTheme() {
+        const checkbox = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        
+        if (checkbox.checked) {
+            // Checkbox checked = Light Mode (Day)
+            html.setAttribute('data-theme', 'light');
+            localStorage.setItem('theme', 'light');
+        } else {
+            // Checkbox unchecked = Dark Mode (Night - Default)
+            html.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'dark');
+        }
+    }
+
+    function loadThemePreference() {
+        const savedTheme = localStorage.getItem('theme');
+        const checkbox = document.getElementById('themeToggle');
+        const html = document.documentElement;
+
+        if (savedTheme === 'light') {
+            html.setAttribute('data-theme', 'light');
+            if (checkbox) checkbox.checked = true;
+        } else {
+            html.removeAttribute('data-theme');
+            if (checkbox) checkbox.checked = false;
+        }
+    }
+
+    // Password visibility toggle
+    passwordToggle.addEventListener('click', () => {
+      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordInput.setAttribute('type', type);
+      
+      // Toggle eye icon
+      const icon = passwordToggle.querySelector('i');
+      icon.className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+    });
+
+    // Remember me checkbox
+    rememberCheckbox.addEventListener('click', () => {
+      rememberCheckbox.classList.toggle('checked');
+    });
+
+    // Update form submission in login page
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // Get form values
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      const fullName = document.getElementById('fullName').value.trim();
+      const rememberMe = rememberCheckbox.classList.contains('checked');
+      
+      // Basic validation
+      if (!email || !password || !fullName) {
+        alert('Please fill in all fields');
+        return;
+      }
+      
+      // Show loading state
+      loginButton.disabled = true;
+      loginButton.innerHTML = '<div class="loading"></div> Signing in...';
+      
+      // Simulate API call
+      try {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const userData = {
+            name: fullName,
+            email: email, 
+            avatarInitials: fullName.split(' ').map(n => n[0]).join('').toUpperCase()
+        };
+        localStorage.setItem('userData', JSON.stringify(userData));
+        console.log('User data saved:', userData);
+        
+        // Redirect to welcome page
+        window.location.href = '/welcome';
+        
+      } catch (error) {
+        console.error('Login error:', error);
+        alert('Login failed. Please check your credentials and try again.');
+      } finally {
+        // Reset button state
+        loginButton.disabled = false;
+        loginButton.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+      }
+    });
+
+    // Social login buttons
+    document.querySelectorAll('.social-button').forEach(button => {
+      button.addEventListener('click', () => {
+        const provider = button.textContent.trim();
+        alert(`Sign in with ${provider} would be implemented here`);
+      });
+    });
+
+    // Forgot password link
+    document.querySelector('.forgot-password').addEventListener('click', (e) => {
+      e.preventDefault();
+      alert('Password reset functionality would be implemented here');
+    });
+
+    // Sign up link
+    document.querySelector('.signup-link a').addEventListener('click', (e) => {
+      e.preventDefault();
+      alert('Sign up functionality would be implemented here');
+    });
+  </script>
+</body>
+</html>

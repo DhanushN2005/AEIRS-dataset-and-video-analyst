@@ -1,0 +1,2909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AEIRS - Autonomous Enterprise Intelligence & Reporting System</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<style>
+    /* =========================================
+       THEMING & VARIABLES
+       ========================================= */
+    :root {
+        /* Default DARK Theme */
+        --primary: #6366f1;
+        --primary-dark: #4f46e5;
+        --primary-light: #8b5cf6;
+        --secondary: #10b981;
+        --accent: #f59e0b;
+        --accent-pink: #ec4899;
+        
+        --bg: #0f172a;
+        --bg-elevated: #1e293b;
+        --bg-card: rgba(30, 41, 59, 0.9);
+        --bg-input: #1e293b;
+        --border: #334155;
+        --border-light: #475569;
+        
+        --text-main: #f1f5f9;
+        --text-secondary: #cbd5e1;
+        --text-muted: #94a3b8;
+        
+        --success: #10b981;
+        --warning: #f59e0b;
+        --error: #ef4444;
+        
+        --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+        --glow: 0 0 20px rgba(99, 102, 241, 0.3);
+        --header-gradient: radial-gradient(ellipse at top left, #1e293b, #0f172a 70%);
+        
+        --radius: 12px;
+        --radius-lg: 16px;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* LIGHT Theme Overrides */
+    [data-theme="light"] {
+        --bg: #f0f2f5;
+        --bg-elevated: #ffffff;
+        --bg-card: rgba(255, 255, 255, 0.95);
+        --bg-input: #f8fafc;
+        --border: #e2e8f0;
+        --border-light: #cbd5e1;
+        
+        --text-main: #1e293b;
+        --text-secondary: #475569;
+        --text-muted: #64748b;
+        
+        --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --glow: 0 0 15px rgba(99, 102, 241, 0.15);
+        --header-gradient: radial-gradient(ellipse at top left, #f1f5f9, #e2e8f0 70%);
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--header-gradient);
+        color: var(--text-main);
+        line-height: 1.6;
+        min-height: 100vh;
+        padding: 20px;
+        transition: background 0.5s ease, color 0.5s ease;
+    }
+
+    /* =========================================
+       CUSTOM DAY/NIGHT TOGGLE CSS (FIXED)
+       ========================================= */
+    .theme-toggle-wrapper {
+        display: flex;
+        align-items: center;
+        margin-right: 15px;
+    }
+
+    .theme-switch {
+        position: relative;
+        width: 70px;
+        height: 34px;
+        border-radius: 20px;
+        background-color: #1a1a2e; /* Night Sky Default */
+        cursor: pointer;
+        border: 2px solid var(--border);
+        overflow: hidden;
+        transition: background-color 0.5s cubic-bezier(0.4, 0.0, 0.2, 1), border-color 0.5s ease;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.4);
+    }
+
+    .theme-switch input {
+        display: none;
+    }
+
+    /* The Circle (Sun/Moon Base) */
+    .toggle-circle {
+        position: absolute;
+        top: 3px;
+        left: 4px; /* Starting Position */
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background-color: #fdd835; /* Moon/Sun Color */
+        transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        box-shadow: 0 0 8px rgba(253, 216, 53, 0.4);
+        z-index: 2;
+        overflow: hidden; /* Ensures shadow stays within circle bounds if needed */
+    }
+
+    /* The Shadow that cuts the Moon Shape */
+    .toggle-circle::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background-color: #1a1a2e; /* Must match the Night Sky background */
+        transform: translate(35%, -35%); /* Shifts up-right to create crescent on bottom-left */
+        transition: transform 0.5s ease, background-color 0.5s ease;
+    }
+
+    /* Stars (Visible in Night Mode) */
+    .star {
+        position: absolute;
+        background-color: #fff;
+        border-radius: 50%;
+        z-index: 1;
+        opacity: 1;
+        transition: all 0.4s ease;
+    }
+    .star-1 { top: 7px; left: 35px; width: 2px; height: 2px; }
+    .star-2 { top: 18px; left: 45px; width: 3px; height: 3px; }
+    .star-3 { top: 8px; left: 55px; width: 2px; height: 2px; }
+    .star-4 { top: 22px; left: 28px; width: 1px; height: 1px; }
+
+    /* Clouds (Visible in Day Mode) */
+    .cloud {
+        position: absolute;
+        background: #fff;
+        border-radius: 10px;
+        opacity: 0;
+        z-index: 1;
+        transition: all 0.4s ease;
+        transform: translateY(10px);
+    }
+    .cloud-1 { top: 18px; left: 10px; width: 18px; height: 6px; }
+    .cloud-2 { top: 8px; left: 25px; width: 12px; height: 4px; }
+
+    /* --- CHECKED STATE (DAY MODE) --- */
+    
+    /* Change Sky Background */
+    .theme-switch input:checked + .slider-container {
+        background-color: #87CEEB; /* Day Sky */
+    }
+    
+    /* Move Circle to Right (become Sun) */
+    .theme-switch input:checked + .slider-container .toggle-circle {
+        left: 39px;
+        background-color: #ffeb3b;
+        box-shadow: 0 0 15px rgba(255, 235, 59, 0.9);
+        transform: scale(1);
+    }
+
+    /* Move Shadow Away (Reveal full circle) */
+    .theme-switch input:checked + .slider-container .toggle-circle::before {
+        transform: translate(100%, -100%); /* Move shadow out of the way */
+        background-color: #87CEEB; /* Match day sky (invisible but good practice) */
+    }
+
+    /* Hide Stars */
+    .theme-switch input:checked + .slider-container .star {
+        opacity: 0;
+        transform: scale(0);
+    }
+
+    /* Show Clouds */
+    .theme-switch input:checked + .slider-container .cloud {
+        opacity: 0.9;
+        transform: translateY(0);
+    }
+
+    /* Logic helper for CSS toggle background */
+    #themeToggle:checked ~ .slider-container {
+        background-color: #87CEEB;
+    }
+    
+    /* =========================================
+       STANDARD STYLES
+       ========================================= */
+
+    .container {
+        max-width: 1600px;
+        margin: 0 auto;
+        background: var(--bg-card);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+        transition: background 0.3s ease, border-color 0.3s ease;
+    }
+
+    .header {
+        background: var(--bg-card);
+        color: var(--text-main);
+        padding: 20px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border);
+        position: relative;
+        overflow: hidden;
+        transition: background 0.3s ease;
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+    }
+
+    .header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(to right, var(--primary), var(--accent-pink));
+        animation: headerGlow 3s infinite;
+    }
+
+    .header h1 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        background: linear-gradient(to right, var(--text-main), var(--primary-light));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 4px;
+    }
+
+    .header .subtitle {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+
+    .status-badge {
+        background: var(--bg-input);
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        transition: all 0.3s ease;
+    }
+
+    .tabs {
+        display: flex;
+        background: var(--bg-input);
+        border-bottom: 1px solid var(--border);
+        padding: 0 30px;
+        overflow-x: auto;
+        transition: background 0.3s ease;
+    }
+
+    .tab {
+        padding: 15px 20px;
+        cursor: pointer;
+        border: none;
+        background: none;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        border-bottom: 3px solid transparent;
+        transition: var(--transition);
+        white-space: nowrap;
+    }
+
+    .tab:hover {
+        color: var(--primary);
+        background: rgba(99, 102, 241, 0.05);
+    }
+
+    .tab.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+        font-weight: 600;
+    }
+
+    .content {
+        padding: 30px;
+        max-height: calc(100vh - 200px);
+        overflow-y: auto;
+        background: var(--bg-elevated);
+        transition: background 0.3s ease;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+        animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes headerGlow {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        box-shadow: var(--shadow);
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(to right, var(--primary), var(--accent));
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.5s ease;
+    }
+
+    .card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .card:hover {
+        box-shadow: var(--shadow-lg), var(--glow);
+        transform: translateY(-5px);
+    }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+
+    .card-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: var(--primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 18px;
+        transition: var(--transition);
+    }
+
+    .card:hover .card-icon {
+        transform: scale(1.1);
+        background: linear-gradient(135deg, var(--primary), var(--accent-pink));
+    }
+
+    .card-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    .card-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary-light);
+        margin: 10px 0;
+    }
+
+    .card-subtitle {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    .upload-zone {
+        border: 2px dashed var(--border);
+        border-radius: var(--radius);
+        padding: 50px 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: var(--transition);
+        background: var(--bg-input);
+    }
+
+    .upload-zone:hover {
+        border-color: var(--primary);
+        background: rgba(99, 102, 241, 0.05);
+    }
+
+    .upload-zone.dragover {
+        border-color: var(--primary);
+        background: rgba(99, 102, 241, 0.1);
+    }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: var(--radius);
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.7s;
+    }
+
+    .btn:hover::before {
+        left: 100%;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: white;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-secondary {
+        background: var(--bg-input);
+        color: var(--text-main);
+        border: 1px solid var(--border);
+    }
+
+    .btn-danger {
+        background: var(--error);
+        color: white;
+    }
+
+    .btn-success {
+        background: var(--success);
+        color: white;
+    }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none !important;
+    }
+
+    .file-list {
+        margin-top: 20px;
+    }
+
+    .file-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 15px;
+        background: var(--bg-input);
+        border-radius: var(--radius);
+        margin-bottom: 10px;
+        border: 1px solid var(--border);
+        transition: var(--transition);
+    }
+
+    .file-item:hover {
+        border-color: var(--primary);
+    }
+
+    .file-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+    }
+
+    .file-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .pipeline-stage {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        background: var(--bg-input);
+        border-radius: var(--radius);
+        margin-bottom: 10px;
+        border: 1px solid var(--border);
+        transition: var(--transition);
+    }
+
+    .pipeline-stage:hover {
+        border-color: var(--primary);
+    }
+
+    .stage-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: 600;
+        transition: var(--transition);
+    }
+
+    .stage-pending {
+        background: var(--bg-input);
+        color: var(--text-muted);
+        border: 1px solid var(--border);
+    }
+
+    .stage-running {
+        background: var(--primary);
+        color: white;
+        animation: pulse 1.5s infinite;
+    }
+
+    .stage-completed {
+        background: var(--success);
+        color: white;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    .insight-item {
+        padding: 20px;
+        background: var(--bg-input);
+        border-left: 4px solid var(--primary);
+        border-radius: var(--radius);
+        margin-bottom: 15px;
+        border: 1px solid var(--border);
+        transition: var(--transition);
+    }
+
+    .insight-item:hover {
+        border-color: var(--primary);
+        transform: translateX(5px);
+    }
+
+    .insight-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .insight-badge {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+    .badge-high {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--error);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .badge-medium {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--warning);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .badge-info {
+        background: rgba(99, 102, 241, 0.1);
+        color: var(--primary);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+
+    .badge-low {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .chart-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+        gap: 20px;
+        align-items: flex-start;
+    }
+
+    .chart-card {
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        min-height: 400px;
+        transition: var(--transition);
+    }
+
+    .chart-card:hover {
+        border-color: var(--primary);
+    }
+
+    .chart-container {
+        width: 100%;
+        height: 350px;
+    }
+
+    .correlation-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        background: var(--bg-input);
+        border-radius: var(--radius);
+        overflow: hidden;
+    }
+
+    .correlation-table th, .correlation-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .correlation-table th {
+        background: var(--bg-card);
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    .correlation-value {
+        font-weight: bold;
+    }
+
+    .correlation-strong {
+        color: var(--error);
+    }
+
+    .correlation-moderate {
+        color: var(--warning);
+    }
+
+    .config-section {
+        background: var(--bg-input);
+        padding: 20px;
+        border-radius: var(--radius);
+        margin-bottom: 20px;
+        border: 1px solid var(--border);
+    }
+
+    .config-group {
+        margin-bottom: 20px;
+    }
+
+    .config-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--text-main);
+    }
+
+    .config-group input, .config-group select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        font-size: 0.85rem;
+        background: var(--bg-card);
+        color: var(--text-main);
+        transition: var(--transition);
+    }
+
+    .config-group input:focus, .config-group select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+    }
+
+    .toggle-switch {
+        width: 50px;
+        height: 26px;
+        background: var(--border);
+        border-radius: 13px;
+        position: relative;
+        transition: var(--transition);
+    }
+
+    .toggle-switch.active {
+        background: var(--primary);
+    }
+
+    .toggle-switch::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        top: 3px;
+        left: 3px;
+        transition: var(--transition);
+    }
+
+    .toggle-switch.active::after {
+        left: 27px;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-muted);
+    }
+
+    .spinner {
+        border: 4px solid var(--border);
+        border-top: 4px solid var(--primary);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-muted);
+    }
+
+    .empty-state-icon {
+        font-size: 48px;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+
+    #fileInput {
+        display: none;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: var(--border);
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 20px 0;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary), var(--primary-light));
+        transition: width 0.3s;
+        width: 0%;
+    }
+
+    .report-card {
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-bottom: 15px;
+        transition: var(--transition);
+    }
+
+    .report-card:hover {
+        border-color: var(--primary);
+    }
+
+    .export-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .search-box {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        font-size: 0.85rem;
+        margin-bottom: 20px;
+        background: var(--bg-input);
+        color: var(--text-main);
+        transition: var(--transition);
+    }
+
+    .search-box:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .filter-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn {
+        padding: 8px 16px;
+        border: 1px solid var(--border);
+        background: var(--bg-input);
+        color: var(--text-main);
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: var(--transition);
+        font-size: 0.8rem;
+    }
+
+    .filter-btn.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
+    .filter-btn:hover:not(.active) {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+
+    .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: var(--bg-card);
+    color: var(--text-main);
+        padding: 15px 20px;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-lg);
+        display: none;
+        z-index: 1000;
+        border: 1px solid var(--border);
+    }
+
+    .notification.show {
+        display: block;
+        animation: slideIn 0.3s;
+    }
+
+    @keyframes slideIn {
+        from { transform: translateX(400px); }
+        to { transform: translateX(0); }
+    }
+
+    .comparison-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .grid { grid-template-columns: 1fr; }
+        .chart-grid { grid-template-columns: 1fr; }
+        .content { padding: 20px; }
+        .tabs { padding: 0 15px; }
+        .header { padding: 15px 20px; flex-direction: column; align-items: flex-start; gap: 15px; }
+        .header-right { width: 100%; justify-content: space-between; margin-top: 10px; }
+    }
+    /* --- NEXUS BOT STYLES --- */
+#nexus-widget {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 9999;
+    font-family: 'Segoe UI', sans-serif;
+}
+.nexus-btn {
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    cursor: pointer;
+    color: white;
+    font-size: 30px;
+    transition: transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.nexus-btn:hover { transform: scale(1.05); }
+#nexus-chat-window {
+    display: none;
+    position: absolute;
+    bottom: 80px;
+    right: 0;
+    width: 380px;
+    height: 550px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 40px rgba(0,0,0,0.25);
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+}
+
+</style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>AEIRS Enterprise</h1>
+                <div class="subtitle">Autonomous Enterprise Intelligence & Reporting System</div>
+            </div>
+            
+            <div class="header-right">
+                <div class="theme-toggle-wrapper">
+                    <label class="theme-switch" for="themeToggle">
+                        <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+                        <div class="slider-container" style="width:100%; height:100%; position:relative;">
+                            <div class="toggle-circle"></div>
+                            <div class="star star-1"></div>
+                            <div class="star star-2"></div>
+                            <div class="star star-3"></div>
+                            <div class="star star-4"></div>
+                            <div class="cloud cloud-1"></div>
+                            <div class="cloud cloud-2"></div>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="status-badge">
+                    <span>●</span>
+                    <span id="systemStatus">System Ready</span>
+                </div>
+            </div>
+        </div>
+        <div class="tabs">
+    <button class="tab active" onclick="switchTab('dashboard', this)">📊 Dashboard</button>
+    <button class="tab" onclick="switchTab('upload', this)">📤 Upload Dataset</button>
+    <button class="tab" onclick="switchTab('pipeline', this)">⚙️ Analysis Pipeline</button>
+    <button class="tab" onclick="switchTab('insights', this)">💡 AI Insights</button>
+    <button class="tab" onclick="switchTab('visualizations', this)">📈 Visualizations</button>
+    <button class="tab" onclick="switchTab('correlations', this)">🔗 Correlations</button>
+    <button class="tab" onclick="switchTab('comparison', this)">🔄 Compare</button>
+    <button class="tab" onclick="switchTab('reports', this)">📄 Reports</button>
+    <button class="tab" onclick="switchTab('config', this)">⚙️ Configuration</button>
+</div>
+
+        <div class="content">
+            <div id="dashboard" class="tab-content active">
+                <h2 style="margin-bottom: 25px;">System Overview</h2>
+                <div class="grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon" style="background: #e3f2fd; color: #2196f3;">📁</div>
+                            <div class="card-title">Datasets</div>
+                        </div>
+                        <div class="card-value" id="datasetsCount">0</div>
+                        <div class="card-subtitle">Files uploaded</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon" style="background: #fff3e0; color: #ff9800;">⚠️</div>
+                            <div class="card-title">Anomalies</div>
+                        </div>
+                        <div class="card-value" id="anomaliesCount">0</div>
+                        <div class="card-subtitle">Issues detected</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon" style="background: #e8f5e9; color: #4caf50;">🔗</div>
+                            <div class="card-title">Correlations</div>
+                        </div>
+                        <div class="card-value" id="correlationsCount">0</div>
+                        <div class="card-subtitle">Relationships found</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon" style="background: #f3e5f5; color: #9c27b0;">📊</div>
+                            <div class="card-title">Analyses</div>
+                        </div>
+                        <div class="card-value" id="analysesCount">0</div>
+                        <div class="card-subtitle">Completed runs</div>
+                    </div>
+                </div>
+
+                <h3 style="margin: 30px 0 15px;">Recent Activity</h3>
+                <div id="recentActivity">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔭</div>
+                        <p>No recent activity. Upload data to get started.</p>
+                    </div>
+                </div>
+
+                <h3 style="margin: 30px 0 15px;">Uploaded Files</h3>
+                <div id="fileListDashboard">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📁</div>
+                        <p>No files uploaded yet.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="upload" class="tab-content">
+                <h2 style="margin-bottom: 25px;">Upload Dataset</h2>
+                <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                    <div style="font-size: 48px; margin-bottom: 15px;">📤</div>
+                    <h3>Drop files here or click to browse</h3>
+                    <p style="color: #999; margin-top: 10px;">Supports CSV, Excel (up to 500MB)</p>
+                    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" onchange="uploadFile()">
+                </div>
+                <div class="progress-bar" id="uploadProgress" style="display: none;">
+                    <div class="progress-fill" id="uploadProgressFill"></div>
+                </div>
+                <div class="file-list" id="fileList"></div>
+            </div>
+
+            <div id="pipeline" class="tab-content">
+                <h2 style="margin-bottom: 25px;">Analysis Pipeline</h2>
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <button class="btn btn-primary" onclick="analyzeWithPipeline()" id="pipelineBtn">
+                        ▶️ Run Analysis Pipeline
+                    </button>
+                </div>
+                <div id="pipelineStages">
+                    <div class="pipeline-stage">
+                        <div class="stage-icon stage-pending">1</div>
+                        <div>
+                            <strong>Data Ingestion</strong>
+                            <div style="font-size: 13px; color: #666;">Load and parse datasets</div>
+                        </div>
+                    </div>
+                    <div class="pipeline-stage">
+                        <div class="stage-icon stage-pending">2</div>
+                        <div>
+                            <strong>Preprocessing</strong>
+                            <div style="font-size: 13px; color: #666;">Clean, normalize, feature engineering</div>
+                        </div>
+                    </div>
+                    <div class="pipeline-stage">
+                        <div class="stage-icon stage-pending">3</div>
+                        <div>
+                            <strong>Anomaly Detection</strong>
+                            <div style="font-size: 13px; color: #666;">Z-score, Isolation Forest, LOF</div>
+                        </div>
+                    </div>
+                    <div class="pipeline-stage">
+                        <div class="stage-icon stage-pending">4</div>
+                        <div>
+                            <strong>Correlation Analysis</strong>
+                            <div style="font-size: 13px; color: #666;">Pearson, Spearman correlations</div>
+                        </div>
+                    </div>
+                    <div class="pipeline-stage">
+                        <div class="stage-icon stage-pending">5</div>
+                        <div>
+                            <strong>Causality Testing</strong>
+                            <div style="font-size: 13px; color: #666;">Granger causality analysis</div>
+                        </div>
+                    </div>
+                    <div class="pipeline-stage">
+                        <div class="stage-icon stage-pending">6</div>
+                        <div>
+                            <strong>SDG Analysis</strong>
+                            <div style="font-size: 13px; color: #666;">Sustainability goal mapping</div>
+                        </div>
+                    </div>
+                    <div class="pipeline-stage">
+                        <div class="stage-icon stage-pending">7</div>
+                        <div>
+                            <strong>Visualization</strong>
+                            <div style="font-size: 13px; color: #666;">Generate interactive charts</div>
+                        </div>
+                    </div>
+                    <div class="pipeline-stage">
+                        <div class="stage-icon stage-pending">8</div>
+                        <div>
+                            <strong>Report Generation</strong>
+                            <div style="font-size: 13px; color: #666;">Create comprehensive reports</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="insights" class="tab-content">
+                <h2 style="margin-bottom: 25px;">AI-Generated Insights</h2>
+                <input type="text" class="search-box" placeholder="🔍 Search insights..." id="insightSearch" oninput="filterInsights()">
+                <div class="filter-group">
+                    <button class="filter-btn active" onclick="filterByType('all', this)">All</button>
+                    <button class="filter-btn" onclick="filterByType('anomaly', this)">Anomalies</button>
+                    <button class="filter-btn" onclick="filterByType('correlation', this)">Correlations</button>
+                    <button class="filter-btn" onclick="filterByType('statistics', this)">Statistics</button>
+                </div>
+                <div id="insightsList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🤖</div>
+                        <p>No insights yet. Upload and analyze data first.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="visualizations" class="tab-content">
+                <h2 style="margin-bottom: 25px;">Data Visualizations</h2>
+                <div class="chart-grid" id="chartGrid">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <p>No charts available. Analyze data to generate visualizations.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="correlations" class="tab-content">
+                <h2 style="margin-bottom: 25px;">Correlation Analysis</h2>
+                <div id="correlationsList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔗</div>
+                        <p>No correlations found yet. Analyze data first.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="comparison" class="tab-content">
+                <h2 style="margin-bottom: 25px;">Dataset Comparison</h2>
+                <div style="margin-bottom: 20px;">
+                    <label>Select datasets to compare:</label>
+                    <div id="comparisonSelector" style="margin:10px 0;"></div>
+                    <div style="margin-top:12px;">
+                        <button class="btn btn-primary" onclick="compareSelectedDatasets()">🔀 Compare Selected</button>
+                        <button class="btn btn-secondary" onclick="updateComparisonSelector(allFiles)">🔄 Refresh List</button>
+                        <button class="btn btn-secondary" onclick="document.getElementById('comparisonGrid').innerHTML = ''">🧹 Clear Results</button>
+                    </div>
+                </div>
+                <div class="comparison-grid" id="comparisonGrid">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔄</div>
+                        <p>Upload multiple datasets and select at least 2 to compare.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="reports" class="tab-content">
+                <h2 style="margin-bottom: 25px;">Generated Reports</h2>
+                <div id="reportsList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📄</div>
+                        <p>No reports generated yet. Run an analysis to enable exports.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="config" class="tab-content">
+                <h2 style="margin-bottom: 25px;">System Configuration</h2>
+                <div class="config-section">
+                    <h3 style="margin-bottom: 20px;">Detection Settings</h3>
+                    <div class="config-group">
+                        <label>Anomaly Threshold (σ)</label>
+                        <input type="number" id="anomalyThreshold" value="3" step="0.1" min="1" max="5">
+                    </div>
+                    <div class="config-group">
+                        <label>Correlation Threshold</label>
+                        <input type="number" id="correlationThreshold" value="0.7" step="0.05" min="0" max="1">
+                    </div>
+                    <div class="config-group">
+                        <label>Detection Methods</label>
+                        <select id="detectionMethods" multiple style="height: 100px;">
+                            <option value="zscore" selected>Z-Score</option>
+                            <option value="isolation_forest" selected>Isolation Forest</option>
+                            <option value="lof" selected>Local Outlier Factor</option>
+                            <option value="rolling_mad">Rolling MAD</option>
+                            <option value="iqr">IQR Method</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <h3 style="margin-bottom: 20px;">Feature Toggles</h3>
+                    <div class="config-group">
+                        <div class="toggle" onclick="toggleFeature('llm')">
+                            <div class="toggle-switch active" id="toggleLLM"></div>
+                            <label>Enable LLM Explanations</label>
+                        </div>
+                    </div>
+                    <div class="config-group">
+                        <div class="toggle" onclick="toggleFeature('sdg')">
+                            <div class="toggle-switch active" id="toggleSDG"></div>
+                            <label>Enable SDG Analysis</label>
+                        </div>
+                    </div>
+                    <div class="config-group">
+                        <div class="toggle" onclick="toggleFeature('geo')">
+                            <div class="toggle-switch active" id="toggleGeo"></div>
+                            <label>Enable Geographic Mapping</label>
+                        </div>
+                    </div>
+                    <div class="config-group">
+                        <div class="toggle" onclick="toggleFeature('causality')">
+                            <div class="toggle-switch active" id="toggleCausality"></div>
+                            <label>Enable Causality Testing</label>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="saveConfig()">💾 Save Configuration</button>
+                <button class="btn btn-secondary" onclick="resetConfig()">🔄 Reset to Defaults</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <!-- NEXUS AI widget -->
+    <div id="nexus-widget">
+        <button class="nexus-btn" onclick="toggleChat()">🤖</button>
+
+        <div id="nexus-chat-window">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; color: white; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 20px;">🧠</span>
+                    <div>
+                        <h3 style="margin: 0; font-size: 16px;">NEXUS AI</h3>
+                        <span style="font-size: 11px; opacity: 0.8;">Online • RAG Enabled</span>
+                    </div>
+                </div>
+                <span onclick="toggleChat()" style="cursor: pointer; font-size: 24px;">&times;</span>
+            </div>
+
+            <div id="chat-messages" style="flex: 1; padding: 15px; overflow-y: auto; background: #f8fafc;">
+                <div style="background: var(--bg-input); color: var(--text-main); padding: 12px; border-radius: 12px; border-bottom-left-radius: 2px; margin-bottom: 10px; max-width: 85%; font-size: 14px; line-height: 1.5;">
+                    <b>NEXUS:</b><br>Greetings. I am connected to your pipeline. I can analyze your data, detect anomalies, or process images. How can I help?
+                </div>
+            </div>
+
+            <div style="padding: 15px; background: white; border-top: 1px solid #eee;">
+                <div id="image-preview" style="font-size: 12px; color: #4338ca; margin-bottom: 8px; display: none; background: #e0e7ff; padding: 5px; border-radius: 4px;">
+                    📷 Image attached
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <label style="cursor: pointer; padding: 10px; background: #f1f5f9; border-radius: 8px; transition: background 0.2s;" title="Upload Image">
+                        📷
+                        <input type="file" id="image-input" style="display: none;" accept="image/*" onchange="handleImageUpload()">
+                    </label>
+                    
+                    <input type="text" id="user-input" placeholder="Ask about anomalies..." style="
+                        flex: 1; 
+                        padding: 10px; 
+                        border: 1px solid #cbd5e1; 
+                        border-radius: 8px; 
+                        outline: none;">
+                    
+                    <button onclick="sendMessage()" style="
+                        padding: 10px 15px; 
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                        color: white; 
+                        border: none; 
+                        border-radius: 8px; 
+                        cursor: pointer;">➤</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // === API + state ===
+        const API_BASE = window.location.origin + '/dataset-analysis/api';
+        let currentAnalysisId = null;
+        let allInsights = [];
+        let currentFilter = 'all';
+
+        // NEW globals
+        let selectedFileId = null;
+        let allFiles = [];
+        let lastAnalysisResult = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFiles();
+            updateStats();
+            loadConfig();
+            loadThemePreference(); // Load stored theme
+            setInterval(updateStats, 10000);
+        });
+
+        // === THEME TOGGLE LOGIC ===
+        function toggleTheme() {
+            const checkbox = document.getElementById('themeToggle');
+            const html = document.documentElement;
+            
+            if (checkbox.checked) {
+                // Checkbox checked = Light Mode (Day)
+                html.setAttribute('data-theme', 'light');
+                localStorage.setItem('theme', 'light');
+            } else {
+                // Checkbox unchecked = Dark Mode (Night - Default)
+                html.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        function loadThemePreference() {
+            const savedTheme = localStorage.getItem('theme');
+            const checkbox = document.getElementById('themeToggle');
+            const html = document.documentElement;
+
+            if (savedTheme === 'light') {
+                html.setAttribute('data-theme', 'light');
+                if (checkbox) checkbox.checked = true;
+            } else {
+                html.removeAttribute('data-theme');
+                if (checkbox) checkbox.checked = false;
+            }
+        }
+
+        // Tab switcher
+        function switchTab(tabName, element) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            if (element) element.classList.add('active');
+            const tab = document.getElementById(tabName);
+            if (tab) tab.classList.add('active');
+        }
+
+        // Drag and drop
+        const uploadZone = document.getElementById('uploadZone');
+        if (uploadZone) {
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+            uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file) uploadFileData(file);
+            });
+        }
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+            if (!file) return;
+            await uploadFileData(file);
+            if (fileInput) fileInput.value = '';
+        }
+
+        async function uploadFileData(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                updateStatus('Uploading...');
+                showProgress(0);
+
+                const response = await fetch(`${API_BASE}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                showProgress(100);
+
+                if (!response.ok) throw new Error('Upload failed: ' + response.status + ' ' + response.statusText);
+
+                const result = await response.json();
+                showNotification(`✅ ${file.name} uploaded successfully!`, 'success');
+
+                // Optionally auto-select new file if server returns id
+                if (result && (result.file_id || result.id)) {
+                    selectedFileId = result.file_id || result.id;
+                }
+
+                await loadFiles();
+                await updateStats();
+                updateStatus('Upload Complete');
+                hideProgress();
+
+                return result;
+            } catch (error) {
+                showNotification('❌ Upload failed: ' + error.message, 'error');
+                updateStatus('Upload Failed');
+                hideProgress();
+                console.error('uploadFileData error', error);
+                throw error;
+            }
+        }
+
+        // loadFiles caches files into allFiles
+        async function loadFiles() {
+            try {
+                const response = await fetch(`${API_BASE}/files`);
+                if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+                const data = await response.json();
+
+                allFiles = Array.isArray(data.files) ? data.files : [];
+
+                displayFilesInList(allFiles);
+                displayFilesInDashboard(allFiles);
+                updateComparisonSelector(allFiles);
+
+                return data;
+            } catch (error) {
+                console.error('Failed to load files:', error);
+                allFiles = [];
+                return { files: [] };
+            }
+        }
+
+        function displayFilesInList(files) {
+            const fileList = document.getElementById('fileList');
+            if (!fileList) return;
+
+            if (!files || files.length === 0) {
+                fileList.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No files uploaded yet</p>';
+                return;
+            }
+
+            fileList.innerHTML = '<h3 style="margin: 20px 0;">Uploaded Files</h3>';
+
+            files.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div class="file-info">
+                        <span style="font-size: 24px;">📄</span>
+                        <div>
+                            <strong>${file.filename}</strong>
+                            <div style="font-size: 12px; color: #666;">
+                                ${file.rows ?? '-'} rows × ${file.columns ?? '-'} columns | ${file.size ? (file.size / 1024).toFixed(2) + ' KB' : '-'}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn btn-primary" onclick="analyzeWithPipeline(${file.id})">
+                            🔍 Analyze
+                        </button>
+                        <button class="btn btn-secondary" onclick="viewFileDetails(${file.id})">
+                            👁️ View
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteFile(${file.id})">
+                            🗑️
+                        </button>
+                    </div>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        }
+
+        function displayFilesInDashboard(files) {
+            const dashboard = document.getElementById('fileListDashboard');
+            if (!dashboard) return;
+
+            if (!files || files.length === 0) {
+                dashboard.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📁</div>
+                        <p>No files uploaded yet.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            dashboard.innerHTML = '';
+            files.forEach(file => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <h4>📄 ${file.filename}</h4>
+                    <div class="stats-detail">
+                        ${file.rows ?? '-'} rows × ${file.columns ?? '-'} columns<br>
+                        Uploaded: ${file.uploaded_at ? new Date(file.uploaded_at).toLocaleString() : '-'}
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button class="btn btn-primary" onclick="analyzeWithPipeline(${file.id})">
+                            🔍 Analyze
+                        </button>
+                    </div>
+                `;
+                dashboard.appendChild(card);
+            });
+        }
+
+        async function updateStats() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+                const stats = await response.json();
+
+                const datasetsCount = document.getElementById('datasetsCount');
+                const anomaliesCount = document.getElementById('anomaliesCount');
+                const correlationsCount = document.getElementById('correlationsCount');
+                const analysesCount = document.getElementById('analysesCount');
+
+                if (datasetsCount) datasetsCount.textContent = stats.datasets ?? 0;
+                if (anomaliesCount) anomaliesCount.textContent = stats.total_anomalies ?? 0;
+                if (correlationsCount) correlationsCount.textContent = stats.total_correlations ?? 0;
+                if (analysesCount) analysesCount.textContent = stats.analyses ?? 0;
+            } catch (error) {
+                console.error('Failed to update stats:', error);
+            }
+        }
+
+        async function deleteFile(fileId) {
+            if (!confirm('Delete this file and all associated analyses?')) return;
+
+            try {
+                updateStatus('Deleting...');
+                const response = await fetch(`${API_BASE}/files/${fileId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Delete failed: ' + response.status);
+
+                showNotification('File deleted successfully.', 'success');
+                await loadFiles();
+                await updateStats();
+                updateStatus('Delete Complete');
+            } catch (error) {
+                showNotification('❌ Delete failed: ' + error.message, 'error');
+                updateStatus('Delete Failed');
+                console.error('deleteFile error', error);
+            }
+        }
+
+        // keep analyzeFile as the single backend call; store lastAnalysisResult
+        async function analyzeFile(fileId) {
+            try {
+                optimusCurrentFileId = fileId;
+
+                updateStatus('Analyzing...');
+                const insightsListNode = document.getElementById('insightsList');
+                if (insightsListNode) {
+                    insightsListNode.innerHTML = '<div class="loading"><div class="spinner"></div><p>Running analysis pipeline...</p></div>';
+                }
+
+                const response = await fetch(`${API_BASE}/analyze/${fileId}`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) throw new Error('Analysis failed: ' + response.status);
+
+                const result = await response.json();
+                lastAnalysisResult = result;      // store for exports
+                currentAnalysisId = fileId;
+
+                displayInsights(result);
+                displayCharts(result);
+                displayCorrelations(result);
+                generateReports(result);
+                updateRecentActivity(result);
+                await updateStats();
+
+                updateStatus('Analysis Complete');
+                showNotification(`✅ Analysis Complete! Anomalies: ${result.anomaly_count ?? 0}, Correlations: ${result.correlation_count ?? 0}`, 'success');
+
+                // attempt to switch to insights tab (best-effort)
+                const tabs = document.querySelectorAll('.tab');
+                const insightsBtn = Array.from(tabs).find(t => t.textContent.includes('Insights')) || document.querySelector('[data-tab="insights"]') || document.querySelector('[onclick*="insights"]');
+                switchTab('insights', insightsBtn);
+
+                return result;
+            } catch (error) {
+                showNotification('❌ Analysis failed: ' + error.message, 'error');
+                updateStatus('Analysis Failed');
+                console.error('analyzeFile error', error);
+                throw error;
+            }
+        }
+
+        // NEW combined function: select, pipeline, analyze
+        async function analyzeWithPipeline(fileId = null) {
+            try {
+                // 1. Set selected file if provided
+                if (fileId !== null) selectedFileId = fileId;
+
+                // 2. Guard
+                if (!selectedFileId) {
+                    showNotification("Please select a dataset first!", "error");
+                    return;
+                }
+
+                // 3. Switch to pipeline tab
+                const pipelineTabBtn = document.querySelectorAll('.tab')[2] || document.querySelector('[onclick*="pipeline"]');
+                switchTab('pipeline', pipelineTabBtn);
+
+                // 4. Run pipeline animation (await)
+                await runPipeline();
+
+                // 5. Run actual analysis
+                await analyzeFile(selectedFileId);
+
+            } catch (error) {
+                console.error(error);
+                showNotification("Pipeline/Analysis failed: " + (error.message || error), "error");
+            }
+        }
+
+        function displayInsights(result) {
+            const insightsList = document.getElementById('insightsList');
+            if (!insightsList) return;
+            insightsList.innerHTML = '';
+            allInsights = [];
+
+            // Summary card (guard fields)
+            const summary = result.summary || {};
+            const summaryCard = document.createElement('div');
+            summaryCard.className = 'card';
+            summaryCard.innerHTML = `
+                <h3>📊 Analysis Summary</h3>
+                <div style="margin-top: 15px;">
+                    <p><strong>Dataset:</strong> ${summary.rows ?? '-'} rows × ${summary.columns ?? '-'} columns</p>
+                    <p><strong>Numeric Columns:</strong> ${summary.numeric_columns ?? '-'}</p>
+                    <p><strong>Anomalies Detected:</strong> ${result.anomaly_count ?? 0}</p>
+                    <p><strong>Correlations Found:</strong> ${result.correlation_count ?? 0}</p>
+                    <p><strong>Completed:</strong> ${result.timestamp ? new Date(result.timestamp).toLocaleString() : '-'}</p>
+                </div>
+            `;
+            insightsList.appendChild(summaryCard);
+
+            // Anomaly insights
+            if (Array.isArray(result.anomaly_details) && result.anomaly_details.length > 0) {
+                result.anomaly_details.forEach((anomaly, idx) => {
+                    const severity = Math.abs(anomaly.deviation) > 5 ? 'high' :
+                                    Math.abs(anomaly.deviation) > 3 ? 'medium' : 'low';
+
+                    const insight = {
+                        type: 'anomaly',
+                        element: createInsightElement({
+                            type: 'anomaly',
+                            title: `⚠️ Anomaly in ${anomaly.column}`,
+                            severity: severity,
+                            content: `
+                                <p>
+                                    <strong>Value:</strong> ${typeof anomaly.value === 'number' ? anomaly.value.toFixed(2) : anomaly.value}
+                                    (Expected: ${typeof anomaly.expected === 'number' ? anomaly.expected.toFixed(2) : anomaly.expected})<br>
+                                    <strong>Deviation:</strong> ${typeof anomaly.deviation === 'number' ? anomaly.deviation.toFixed(2) : anomaly.deviation}σ from mean<br>
+                                    <strong>Row Index:</strong> ${anomaly.index ?? '-'}
+                                </p>
+                            `
+                        })
+                    };
+                    allInsights.push(insight);
+                    insightsList.appendChild(insight.element);
+                });
+            }
+
+            // Statistical insights
+            if (result.statistics) {
+                Object.entries(result.statistics).forEach(([col, stats]) => {
+                    const insight = {
+                        type: 'statistics',
+                        element: createInsightElement({
+                            type: 'statistics',
+                            title: `📊 Statistics: ${col}`,
+                            severity: 'info',
+                            content: `
+                                <p>
+                                    Mean: ${typeof stats.mean === 'number' ? stats.mean.toFixed(2) : '-'} |
+                                    Median: ${typeof stats.median === 'number' ? stats.median.toFixed(2) : '-'} |
+                                    Std: ${typeof stats.std === 'number' ? stats.std.toFixed(2) : '-'}<br>
+                                    Range: ${typeof stats.min === 'number' ? stats.min.toFixed(2) : '-'} - ${typeof stats.max === 'number' ? stats.max.toFixed(2) : '-'}
+                                </p>
+                            `
+                        })
+                    };
+                    allInsights.push(insight);
+                    insightsList.appendChild(insight.element);
+                });
+            }
+        }
+
+        function createInsightElement(data) {
+            const insight = document.createElement('div');
+            insight.className = 'insight-item';
+            insight.setAttribute('data-type', data.type || 'info');
+            insight.innerHTML = `
+                <div class="insight-header">
+                    <strong>${data.title}</strong>
+                    <span class="insight-badge badge-${data.severity}">${(data.severity || 'info').toUpperCase()}</span>
+                </div>
+                ${data.content}
+            `;
+            return insight;
+        }
+
+        function displayCharts(result) {
+    const chartGrid = document.getElementById('chartGrid');
+    if (!chartGrid) return;
+    chartGrid.innerHTML = '';
+
+    // Get actual data if available
+    const hasRawData = result.raw_data && Array.isArray(result.raw_data) && result.raw_data.length > 0;
+    
+    // 1. DISTRIBUTION CHARTS - Show actual data distribution (histogram or box plot)
+    if (result.statistics) {
+        const numericColumns = Object.keys(result.statistics).slice(0, 6);
+        
+        numericColumns.forEach(col => {
+            const stats = result.statistics[col];
+            const chartCard = document.createElement('div');
+            chartCard.className = 'chart-card';
+            const chartId = `chart-${col.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '')}`;
+            
+            chartCard.innerHTML = `
+                <h4>📊 ${col} Distribution</h4>
+                <div id="${chartId}" class="chart-container"></div>
+            `;
+            chartGrid.appendChild(chartCard);
+
+            try {
+                if (hasRawData) {
+                    // Extract actual values for this column
+                    const values = result.raw_data
+                        .map(row => row[col])
+                        .filter(val => val !== null && val !== undefined && !isNaN(val));
+                    
+                    if (values.length > 0) {
+                        // Create histogram with actual data
+                        const trace = {
+                            x: values,
+                            type: 'histogram',
+                            name: col,
+                            marker: {
+                                color: 'rgba(102, 126, 234, 0.7)',
+                                line: {
+                                    color: 'rgba(102, 126, 234, 1)',
+                                    width: 1
+                                }
+                            },
+                            nbinsx: Math.min(30, Math.ceil(Math.sqrt(values.length)))
+                        };
+
+                        // Add statistical lines
+                        const shapes = [
+                            {
+                                type: 'line',
+                                x0: stats.mean,
+                                x1: stats.mean,
+                                y0: 0,
+                                y1: 1,
+                                yref: 'paper',
+                                line: { color: 'red', width: 2, dash: 'dash' }
+                            },
+                            {
+                                type: 'line',
+                                x0: stats.median,
+                                x1: stats.median,
+                                y0: 0,
+                                y1: 1,
+                                yref: 'paper',
+                                line: { color: 'green', width: 2, dash: 'dot' }
+                            }
+                        ];
+
+                        const layout = {
+                            xaxis: { title: col },
+                            yaxis: { title: 'Frequency' },
+                            height: 320,
+                            margin: { t: 20, b: 60, l: 60, r: 20 },
+                            shapes: shapes,
+                            annotations: [
+                                {
+                                    x: stats.mean,
+                                    y: 1,
+                                    yref: 'paper',
+                                    text: `Mean: ${stats.mean.toFixed(2)}`,
+                                    showarrow: false,
+                                    font: { color: 'red', size: 10 },
+                                    yanchor: 'bottom'
+                                },
+                                {
+                                    x: stats.median,
+                                    y: 0.95,
+                                    yref: 'paper',
+                                    text: `Median: ${stats.median.toFixed(2)}`,
+                                    showarrow: false,
+                                    font: { color: 'green', size: 10 },
+                                    yanchor: 'bottom'
+                                }
+                            ]
+                        };
+
+                        Plotly.newPlot(chartId, [trace], layout, {responsive: true});
+                    } else {
+                        createStaticBarChart(chartId, stats);
+                    }
+                } else {
+                    createStaticBarChart(chartId, stats);
+                }
+            } catch (err) {
+                console.warn('Plotly error for chart', chartId, err);
+                createStaticBarChart(chartId, stats);
+            }
+        });
+    }
+
+    // 2. TIME SERIES CHART - If date column exists
+    if (hasRawData && result.column_types) {
+        const dateColumns = Object.entries(result.column_types)
+            .filter(([col, type]) => type === 'datetime')
+            .map(([col]) => col);
+        
+        const numericColumns = Object.entries(result.column_types)
+            .filter(([col, type]) => type === 'numeric')
+            .map(([col]) => col);
+
+        if (dateColumns.length > 0 && numericColumns.length > 0) {
+            const dateCol = dateColumns[0];
+            const valueCol = numericColumns[0];
+            
+            createTimeSeriesChart(result.raw_data, dateCol, valueCol, chartGrid);
+        }
+    }
+
+    // 3. CORRELATION HEATMAP - If correlation data exists
+    if (result.correlations && Array.isArray(result.correlations) && result.correlations.length > 0) {
+        createCorrelationHeatmap(result.correlations, chartGrid);
+    }
+
+    // 4. BOX PLOT for outlier detection
+    if (hasRawData && result.statistics) {
+        const numericCols = Object.keys(result.statistics).slice(0, 4);
+        if (numericCols.length > 0) {
+            createBoxPlot(result.raw_data, numericCols, chartGrid);
+        }
+    }
+
+    // 5. SCATTER MATRIX for relationships
+    if (hasRawData && result.statistics) {
+        const cols = Object.keys(result.statistics).slice(0, 3);
+        if (cols.length >= 2) {
+            createScatterMatrix(result.raw_data, cols, chartGrid);
+        }
+    }
+
+    // 6. HIGH CORRELATION COMPARISON CHARTS
+    if (result.correlations && Array.isArray(result.correlations) && result.correlations.length > 0 && hasRawData) {
+        // Get top 2 highest correlations
+        const topCorrelations = result.correlations
+            .filter(c => Math.abs(c.pearson_correlation) > 0.5 && c.feature1 !== c.feature2)
+            .sort((a, b) => Math.abs(b.pearson_correlation) - Math.abs(a.pearson_correlation))
+            .slice(0, 2);
+        
+        topCorrelations.forEach((corr, idx) => {
+            // Main scatter plot with regression
+            createCorrelationScatterPlot(result.raw_data, corr, chartGrid, idx);
+            
+            // Dual-axis line chart for visual comparison
+            createDualAxisComparison(result.raw_data, corr, chartGrid, idx);
+            
+            // Violin plot for distribution comparison
+            createViolinComparison(result.raw_data, corr, chartGrid, idx);
+        });
+    }
+
+    // 7. ANOMALY VISUALIZATION - Enhanced
+    if (Array.isArray(result.anomaly_details) && result.anomaly_details.length > 0) {
+        createAnomalyChart(result.anomaly_details, chartGrid);
+    }
+}
+
+// Helper: Static bar chart fallback
+function createStaticBarChart(chartId, stats) {
+    const trace = {
+        x: ['Min', 'Mean', 'Median', 'Max'],
+        y: [stats.min || 0, stats.mean || 0, stats.median || 0, stats.max || 0],
+        type: 'bar',
+        marker: { color: 'rgba(102, 126, 234, 0.7)' }
+    };
+
+    const layout = {
+        xaxis: { title: 'Metric' },
+        yaxis: { title: 'Value' },
+        height: 320,
+        margin: { t: 20, b: 40, l: 60, r: 20 }
+    };
+
+    Plotly.newPlot(chartId, [trace], layout, {responsive: true});
+}
+
+// Time Series Chart
+function createTimeSeriesChart(data, dateCol, valueCol, container) {
+    const chartCard = document.createElement('div');
+    chartCard.className = 'chart-card';
+    chartCard.innerHTML = `
+        <h4>📈 ${valueCol} Over Time</h4>
+        <div id="timeseries-chart" class="chart-container"></div>
+    `;
+    container.appendChild(chartCard);
+
+    const sortedData = data
+        .filter(row => row[dateCol] && row[valueCol] !== null)
+        .sort((a, b) => new Date(a[dateCol]) - new Date(b[dateCol]));
+
+    const trace = {
+        x: sortedData.map(row => row[dateCol]),
+        y: sortedData.map(row => row[valueCol]),
+        mode: 'lines+markers',
+        type: 'scatter',
+        line: { color: 'rgba(102, 126, 234, 1)', width: 2 },
+        marker: { size: 4 }
+    };
+
+    const layout = {
+        xaxis: { title: dateCol, type: 'date' },
+        yaxis: { title: valueCol },
+        height: 320,
+        margin: { t: 20, b: 60, l: 60, r: 20 }
+    };
+
+    Plotly.newPlot('timeseries-chart', [trace], layout, {responsive: true});
+}
+
+// Correlation Heatmap
+function createCorrelationHeatmap(correlations, container) {
+    const chartCard = document.createElement('div');
+    chartCard.className = 'chart-card';
+    chartCard.innerHTML = `
+        <h4>🔗 Correlation Heatmap</h4>
+        <div id="correlation-heatmap" class="chart-container"></div>
+    `;
+    container.appendChild(chartCard);
+
+    // Extract unique features
+    const features = [...new Set(correlations.flatMap(c => [c.feature1, c.feature2]))];
+    
+    // Build correlation matrix
+    const matrix = features.map(() => features.map(() => 0));
+    correlations.forEach(corr => {
+        const i = features.indexOf(corr.feature1);
+        const j = features.indexOf(corr.feature2);
+        if (i !== -1 && j !== -1) {
+            matrix[i][j] = corr.pearson_correlation;
+            matrix[j][i] = corr.pearson_correlation;
+        }
+    });
+
+    // Set diagonal to 1
+    features.forEach((_, i) => matrix[i][i] = 1);
+
+    const trace = {
+        z: matrix,
+        x: features,
+        y: features,
+        type: 'heatmap',
+        colorscale: 'RdBu',
+        zmid: 0,
+        colorbar: { title: 'Correlation' }
+    };
+
+    const layout = {
+        height: 400,
+        margin: { t: 20, b: 100, l: 100, r: 20 }
+    };
+
+    Plotly.newPlot('correlation-heatmap', [trace], layout, {responsive: true});
+}
+
+// Box Plot for outlier detection
+function createBoxPlot(data, columns, container) {
+    const chartCard = document.createElement('div');
+    chartCard.className = 'chart-card';
+    chartCard.innerHTML = `
+        <h4>📦 Box Plot - Outlier Detection</h4>
+        <div id="boxplot-chart" class="chart-container"></div>
+    `;
+    container.appendChild(chartCard);
+
+    const traces = columns.map(col => ({
+        y: data.map(row => row[col]).filter(val => val !== null && !isNaN(val)),
+        type: 'box',
+        name: col,
+        boxmean: 'sd'
+    }));
+
+    const layout = {
+        yaxis: { title: 'Values' },
+        height: 320,
+        margin: { t: 20, b: 60, l: 60, r: 20 }
+    };
+
+    Plotly.newPlot('boxplot-chart', traces, layout, {responsive: true});
+}
+
+// Scatter Matrix
+function createScatterMatrix(data, columns, container) {
+    const chartCard = document.createElement('div');
+    chartCard.className = 'chart-card';
+    chartCard.innerHTML = `
+        <h4>🎯 Scatter Matrix - Relationships</h4>
+        <div id="scatter-matrix" class="chart-container"></div>
+    `;
+    container.appendChild(chartCard);
+
+    const dimensions = columns.map(col => ({
+        label: col,
+        values: data.map(row => row[col]).filter(val => val !== null && !isNaN(val))
+    }));
+
+    const trace = {
+        type: 'splom',
+        dimensions: dimensions,
+        marker: {
+            color: 'rgba(102, 126, 234, 0.5)',
+            size: 4,
+            line: {
+                color: 'rgba(102, 126, 234, 1)',
+                width: 0.5
+            }
+        }
+    };
+
+    const layout = {
+        height: 500,
+        margin: { t: 20, b: 60, l: 60, r: 20 }
+    };
+
+    Plotly.newPlot('scatter-matrix', [trace], layout, {responsive: true});
+}
+
+// Enhanced Anomaly Chart
+function createAnomalyChart(anomalyDetails, container) {
+    const chartCard = document.createElement('div');
+    chartCard.className = 'chart-card';
+    chartCard.innerHTML = `
+        <h4>⚠️ Anomaly Detection Scatter</h4>
+        <div id="anomaly-chart" class="chart-container"></div>
+    `;
+    container.appendChild(chartCard);
+
+    const trace = {
+        x: anomalyDetails.map(a => a.index),
+        y: anomalyDetails.map(a => a.deviation),
+        mode: 'markers',
+        type: 'scatter',
+        marker: {
+            size: 12,
+            color: anomalyDetails.map(a => Math.abs(a.deviation)),
+            colorscale: 'Reds',
+            showscale: true,
+            colorbar: { title: 'Deviation (σ)' }
+        },
+        text: anomalyDetails.map(a => `${a.column}: ${typeof a.value === 'number' ? a.value.toFixed(2) : a.value}`),
+        hovertemplate: '%{text}<br>Deviation: %{y:.2f}σ<br>Index: %{x}<extra></extra>'
+    };
+
+    const layout = {
+        xaxis: { title: 'Row Index' },
+        yaxis: { title: 'Standard Deviations from Mean' },
+        height: 320,
+        margin: { t: 20, b: 60, l: 60, r: 20 },
+        shapes: [
+            {
+                type: 'line',
+                x0: 0,
+                x1: 1,
+                xref: 'paper',
+                y0: 3,
+                y1: 3,
+                line: { color: 'red', width: 2, dash: 'dash' }
+            },
+            {
+                type: 'line',
+                x0: 0,
+                x1: 1,
+                xref: 'paper',
+                y0: -3,
+                y1: -3,
+                line: { color: 'red', width: 2, dash: 'dash' }
+            }
+        ]
+    };
+
+    Plotly.newPlot('anomaly-chart', [trace], layout, {responsive: true});
+}
+
+// Correlation Scatter Plot with Regression Line
+function createCorrelationScatterPlot(data, correlation, container, index) {
+    const chartCard = document.createElement('div');
+    chartCard.className = 'chart-card';
+    const chartId = `correlation-scatter-${index}`;
+    
+    chartCard.innerHTML = `
+        <h4>🔍 ${correlation.feature1} vs ${correlation.feature2}</h4>
+        <p style="margin: 5px 0; font-size: 13px; color: #666;">
+            Correlation: <strong style="color: ${correlation.pearson_correlation > 0 ? '#10b981' : '#ef4444'}">
+            ${correlation.pearson_correlation.toFixed(3)}</strong>
+            ${correlation.pearson_correlation > 0 ? '(Positive)' : '(Negative)'}
+        </p>
+        <div id="${chartId}" class="chart-container"></div>
+    `;
+    container.appendChild(chartCard);
+
+    // Extract data points
+    const xValues = data.map(row => row[correlation.feature1]).filter(v => v !== null && !isNaN(v));
+    const yValues = data.map(row => row[correlation.feature2]).filter(v => v !== null && !isNaN(v));
+    
+    // Ensure equal length
+    const minLength = Math.min(xValues.length, yValues.length);
+    const x = xValues.slice(0, minLength);
+    const y = yValues.slice(0, minLength);
+
+    // Calculate regression line
+    const n = x.length;
+    const sumX = x.reduce((a, b) => a + b, 0);
+    const sumY = y.reduce((a, b) => a + b, 0);
+    const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
+    const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
+    
+    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+    
+    const xMin = Math.min(...x);
+    const xMax = Math.max(...x);
+    const regressionLine = {
+        x: [xMin, xMax],
+        y: [slope * xMin + intercept, slope * xMax + intercept]
+    };
+
+    // Scatter plot
+    const scatterTrace = {
+        x: x,
+        y: y,
+        mode: 'markers',
+        type: 'scatter',
+        name: 'Data Points',
+        marker: {
+            size: 8,
+            color: 'rgba(102, 126, 234, 0.6)',
+            line: {
+                color: 'rgba(102, 126, 234, 1)',
+                width: 1
+            }
+        }
+    };
+
+    // Regression line
+    const lineTrace = {
+        x: regressionLine.x,
+        y: regressionLine.y,
+        mode: 'lines',
+        type: 'scatter',
+        name: 'Trend Line',
+        line: {
+            color: correlation.pearson_correlation > 0 ? '#10b981' : '#ef4444',
+            width: 3,
+            dash: 'dash'
+        }
+    };
+
+    const layout = {
+        xaxis: { title: correlation.feature1 },
+        yaxis: { title: correlation.feature2 },
+        height: 350,
+        margin: { t: 20, b: 60, l: 60, r: 20 },
+        showlegend: true,
+        legend: { x: 0.02, y: 0.98 }
+    };
+
+    Plotly.newPlot(chartId, [scatterTrace, lineTrace], layout, {responsive: true});
+}
+
+// Side-by-Side Bar Comparison for Correlated Variables
+function createCorrelationComparison(data, correlation, container, index) {
+    const chartCard = document.createElement('div');
+    chartCard.className = 'chart-card';
+    const chartId = `correlation-comparison-${index}`;
+    
+    chartCard.innerHTML = `
+        <h4>📊 Comparative Analysis: ${correlation.feature1} & ${correlation.feature2}</h4>
+        <div id="${chartId}" class="chart-container"></div>
+    `;
+    container.appendChild(chartCard);
+
+    // Get values
+    const feature1Values = data.map(row => row[correlation.feature1]).filter(v => v !== null && !isNaN(v));
+    const feature2Values = data.map(row => row[correlation.feature2]).filter(v => v !== null && !isNaN(v));
+
+    // Calculate statistics
+    const stats1 = calculateStats(feature1Values);
+    const stats2 = calculateStats(feature2Values);
+
+    // Create grouped bar chart
+    const trace1 = {
+        x: ['Min', 'Q1', 'Median', 'Q3', 'Max', 'Mean'],
+        y: [stats1.min, stats1.q1, stats1.median, stats1.q3, stats1.max, stats1.mean],
+        name: correlation.feature1,
+        type: 'bar',
+        marker: { color: 'rgba(102, 126, 234, 0.7)' }
+    };
+
+    const trace2 = {
+        x: ['Min', 'Q1', 'Median', 'Q3', 'Max', 'Mean'],
+        y: [stats2.min, stats2.q1, stats2.median, stats2.q3, stats2.max, stats2.mean],
+        name: correlation.feature2,
+        type: 'bar',
+        marker: { color: 'rgba(239, 68, 68, 0.7)' }
+    };
+
+    const layout = {
+        barmode: 'group',
+        xaxis: { title: 'Statistical Metrics' },
+        yaxis: { title: 'Values' },
+        height: 350,
+        margin: { t: 20, b: 60, l: 60, r: 20 },
+        showlegend: true,
+        legend: { x: 0.02, y: 0.98 }
+    };
+
+    Plotly.newPlot(chartId, [trace1, trace2], layout, {responsive: true});
+}
+
+// Dual-Axis Line Chart for Direct Visual Comparison
+function createDualAxisComparison(data, correlation, container, index) {
+    const chartCard = document.createElement('div');
+    chartCard.className = 'chart-card';
+    const chartId = `dual-axis-comparison-${index}`;
+    
+    chartCard.innerHTML = `
+        <h4>📈 Dual-Axis Comparison: ${correlation.feature1} vs ${correlation.feature2}</h4>
+        <p style="margin: 5px 0; font-size: 13px; color: #666;">
+            Visual overlay showing how both variables move together
+        </p>
+        <div id="${chartId}" class="chart-container"></div>
+    `;
+    container.appendChild(chartCard);
+
+    // Get valid data points
+    const validData = data
+        .map((row, idx) => ({
+            index: idx,
+            val1: row[correlation.feature1],
+            val2: row[correlation.feature2]
+        }))
+        .filter(d => d.val1 !== null && !isNaN(d.val1) && d.val2 !== null && !isNaN(d.val2))
+        .slice(0, 100); // Limit to 100 points for clarity
+
+    const indices = validData.map(d => d.index);
+    const values1 = validData.map(d => d.val1);
+    const values2 = validData.map(d => d.val2);
+
+    // Normalize values2 to same scale as values1 for visual comparison
+    const min1 = Math.min(...values1);
+    const max1 = Math.max(...values1);
+    const min2 = Math.min(...values2);
+    const max2 = Math.max(...values2);
+    
+    const normalizedValues2 = values2.map(v => 
+        ((v - min2) / (max2 - min2)) * (max1 - min1) + min1
+    );
+
+    const trace1 = {
+        x: indices,
+        y: values1,
+        mode: 'lines+markers',
+        name: correlation.feature1,
+        line: { color: '#667eea', width: 2 },
+        marker: { size: 6 }
+    };
+
+    const trace2 = {
+        x: indices,
+        y: normalizedValues2,
+        mode: 'lines+markers',
+        name: `${correlation.feature2} (normalized)`,
+        line: { color: '#ef4444', width: 2, dash: 'dot' },
+        marker: { size: 6, symbol: 'square' },
+        yaxis: 'y2'
+    };
+
+    const layout = {
+        xaxis: { title: 'Data Point Index' },
+        yaxis: {
+            title: correlation.feature1,
+            titlefont: { color: '#667eea' },
+            tickfont: { color: '#667eea' }
+        },
+        yaxis2: {
+            title: correlation.feature2,
+            titlefont: { color: '#ef4444' },
+            tickfont: { color: '#ef4444' },
+            overlaying: 'y',
+            side: 'right',
+            range: [min2, max2]
+        },
+        height: 350,
+        margin: { t: 20, b: 60, l: 60, r: 80 },
+        showlegend: true,
+        legend: { x: 0.02, y: 0.98 }
+    };
+
+    Plotly.newPlot(chartId, [trace1, trace2], layout, {responsive: true});
+}
+
+// Violin Plot for Distribution Comparison
+function createViolinComparison(data, correlation, container, index) {
+    const chartCard = document.createElement('div');
+    chartCard.className = 'chart-card';
+    const chartId = `violin-comparison-${index}`;
+    
+    chartCard.innerHTML = `
+        <h4>🎻 Distribution Comparison: ${correlation.feature1} & ${correlation.feature2}</h4>
+        <p style="margin: 5px 0; font-size: 13px; color: #666;">
+            Shape and spread comparison of both variables
+        </p>
+        <div id="${chartId}" class="chart-container"></div>
+    `;
+    container.appendChild(chartCard);
+
+    const values1 = data.map(row => row[correlation.feature1]).filter(v => v !== null && !isNaN(v));
+    const values2 = data.map(row => row[correlation.feature2]).filter(v => v !== null && !isNaN(v));
+
+    const trace1 = {
+        type: 'violin',
+        y: values1,
+        name: correlation.feature1,
+        box: { visible: true },
+        meanline: { visible: true },
+        fillcolor: 'rgba(102, 126, 234, 0.5)',
+        line: { color: '#667eea' },
+        opacity: 0.6,
+        x0: correlation.feature1
+    };
+
+    const trace2 = {
+        type: 'violin',
+        y: values2,
+        name: correlation.feature2,
+        box: { visible: true },
+        meanline: { visible: true },
+        fillcolor: 'rgba(239, 68, 68, 0.5)',
+        line: { color: '#ef4444' },
+        opacity: 0.6,
+        x0: correlation.feature2
+    };
+
+    const layout = {
+        yaxis: { title: 'Values', zeroline: false },
+        violinmode: 'group',
+        height: 350,
+        margin: { t: 20, b: 80, l: 60, r: 20 },
+        showlegend: false
+    };
+
+    Plotly.newPlot(chartId, [trace1, trace2], layout, {responsive: true});
+}
+
+// Helper function to calculate statistics
+function calculateStats(values) {
+    const sorted = [...values].sort((a, b) => a - b);
+    const n = sorted.length;
+    
+    return {
+        min: sorted[0],
+        q1: sorted[Math.floor(n * 0.25)],
+        median: sorted[Math.floor(n * 0.5)],
+        q3: sorted[Math.floor(n * 0.75)],
+        max: sorted[n - 1],
+        mean: values.reduce((a, b) => a + b, 0) / n
+    };
+}
+        function displayCorrelations(result) {
+            const correlationsList = document.getElementById('correlationsList');
+            if (!correlationsList) return;
+
+            if (!result.correlations || result.correlations.length === 0) {
+                correlationsList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔗</div>
+                        <p>No significant correlations found.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            correlationsList.innerHTML = '<h3 style="margin-bottom: 20px;">Significant Correlations</h3>';
+
+            const table = document.createElement('table');
+            table.className = 'correlation-table';
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Feature 1</th>
+                        <th>Feature 2</th>
+                        <th>Correlation</th>
+                        <th>Strength</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            `;
+
+            const tbody = table.querySelector('tbody');
+            result.correlations.forEach(corr => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><strong>${corr.feature1}</strong></td>
+                    <td><strong>${corr.feature2}</strong></td>
+                    <td class="correlation-value ${corr.strength === 'strong' ? 'correlation-strong' : 'correlation-moderate'}">
+                        ${typeof corr.correlation === 'number' ? corr.correlation.toFixed(2) : corr.correlation}
+                    </td>
+                    <td>${(corr.strength || '').charAt(0).toUpperCase() + (corr.strength || '').slice(1)}</td>
+                `;
+            });
+            correlationsList.appendChild(table);
+        }
+
+        function generateReports(result) {
+            const reportsList = document.getElementById('reportsList');
+            if (!reportsList) return;
+            reportsList.innerHTML = '';
+
+            const reportCard = document.createElement('div');
+            reportCard.className = 'report-card';
+            reportCard.innerHTML = `
+                <h4>📄 Analysis Report - ${new Date().toLocaleDateString()}</h4>
+                <p style="margin: 10px 0; color: #666;">
+                    Comprehensive analysis with ${result.anomaly_count ?? 0} anomalies and ${result.correlation_count ?? 0} correlations
+                </p>
+                <div class="export-buttons">
+                    <button class="btn btn-primary" onclick="exportReport('html')">📄 Export HTML</button>
+                    <button class="btn btn-success" onclick="exportReport('pdf')">📑 Export PDF</button>
+                    <button class="btn btn-secondary" onclick="exportReport('json')">📊 Export JSON</button>
+                </div>
+            `;
+            reportsList.appendChild(reportCard);
+        }
+
+        function updateRecentActivity(result) {
+            const activity = document.getElementById('recentActivity');
+            if (!activity) return;
+            const item = document.createElement('div');
+            item.className = 'file-item';
+            item.innerHTML = `
+                <div class="file-info">
+                    <span style="font-size: 24px;">✅</span>
+                    <div>
+                        <strong>Analysis Completed</strong>
+                        <div style="font-size: 12px; color: #666;">
+                            ${result.anomaly_count ?? 0} anomalies, ${result.correlation_count ?? 0} correlations - ${new Date().toLocaleString()}
+                        </div>
+                    </div>
+                </div>
+            `;
+            if (activity.querySelector('.empty-state')) {
+                activity.innerHTML = '';
+            }
+            activity.insertBefore(item, activity.firstChild);
+        }
+
+        // Pipeline animation returns a Promise
+        async function runPipeline() {
+            const stages = document.querySelectorAll('.pipeline-stage .stage-icon');
+            const btn = document.getElementById('pipelineBtn');
+            if (btn) btn.disabled = true;
+
+            for (let i = 0; i < stages.length; i++) {
+                stages[i].className = 'stage-icon stage-running';
+                stages[i].textContent = '⏳';
+
+                await new Promise(resolve => setTimeout(resolve, 800));
+
+                stages[i].className = 'stage-icon stage-completed';
+                stages[i].textContent = '✓';
+            }
+
+            if (btn) btn.disabled = false;
+            showNotification('✅ Pipeline completed successfully!', 'success');
+        }
+
+        function filterInsights() {
+            const searchInput = document.getElementById('insightSearch');
+            const search = searchInput ? searchInput.value.toLowerCase() : '';
+            const insights = document.querySelectorAll('.insight-item');
+
+            insights.forEach(insight => {
+                const text = insight.textContent.toLowerCase();
+                const matchesSearch = text.includes(search);
+                const matchesFilter = currentFilter === 'all' || insight.getAttribute('data-type') === currentFilter;
+
+                insight.style.display = matchesSearch && matchesFilter ? 'block' : 'none';
+            });
+        }
+
+        function filterByType(type, element) {
+            currentFilter = type;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            if (element) element.classList.add('active');
+            filterInsights();
+        }
+
+        function updateComparisonSelector(files) {
+            const selector = document.getElementById('comparisonSelector');
+            if (!selector) return;
+            if (!files || files.length < 2) {
+                selector.innerHTML = '<p style="color: #999;">Need at least 2 datasets</p>';
+                return;
+            }
+
+            selector.innerHTML = files.map(f => `
+                <label style="display: block; margin: 10px 0;">
+                    <input type="checkbox" value="${f.id}"> ${f.filename}
+                </label>
+            `).join('');
+        }
+
+        function viewFileDetails(fileId) {
+            showNotification('File details view - Feature coming soon!', 'info');
+        }
+
+        // EXPORT report (json/html/pdf)
+        function exportReport(format) {
+            if (!lastAnalysisResult) {
+                showNotification('No analysis available to export. Run an analysis first.', 'error');
+                return;
+            }
+
+            const filenameBase = `aeids_report_${(new Date()).toISOString().slice(0,19).replace(/[:T]/g,'-')}`;
+
+            if (format === 'json') {
+                const blob = new Blob([JSON.stringify(lastAnalysisResult, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${filenameBase}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+                showNotification('✅ JSON report downloaded', 'success');
+                return;
+            }
+
+            const html = `
+                <html>
+                <head><title>AEIRS Report</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; color: #111; }
+                        h1 { color: #1e3c72; }
+                        .meta { color: #666; margin-bottom: 12px; }
+                        .section { margin-top: 18px; padding: 12px; border-radius: 8px; border:1px solid #e6e6e6; }
+                        table { width:100%; border-collapse: collapse; margin-top: 8px; }
+                        th, td { border:1px solid #ddd; padding:8px; text-align:left; }
+                        th { background: #f7f7fb; }
+                    </style>
+                </head>
+                <body>
+                    <h1>AEIRS Analysis Report</h1>
+                    <div class="meta">Generated: ${new Date().toLocaleString()}</div>
+
+                    <div class="section">
+                        <h2>Summary</h2>
+                        <p>Dataset rows × cols: ${lastAnalysisResult?.summary?.rows ?? '-'} × ${lastAnalysisResult?.summary?.columns ?? '-'}</p>
+                        <p>Anomalies: ${lastAnalysisResult?.anomaly_count ?? 0} • Correlations: ${lastAnalysisResult?.correlation_count ?? 0}</p>
+                    </div>
+
+                    <div class="section">
+                        <h2>Top Anomalies</h2>
+                        ${Array.isArray(lastAnalysisResult?.anomaly_details) && lastAnalysisResult.anomaly_details.length > 0 ? `
+                            <table><thead><tr><th>Column</th><th>Value</th><th>Deviation</th><th>Row</th></tr></thead>
+                            <tbody>
+                                ${lastAnalysisResult.anomaly_details.slice(0,20).map(a => `<tr><td>${a.column}</td><td>${a.value}</td><td>${a.deviation}</td><td>${a.index}</td></tr>`).join('')}
+                            </tbody></table>
+                        ` : `<p>No anomalies found.</p>`}
+                    </div>
+
+                    <div class="section">
+                        <h2>Top Correlations</h2>
+                        ${Array.isArray(lastAnalysisResult?.correlations) && lastAnalysisResult.correlations.length > 0 ? `
+                            <table><thead><tr><th>Feature 1</th><th>Feature 2</th><th>Correlation</th></tr></thead>
+                            <tbody>
+                                ${lastAnalysisResult.correlations.slice(0,20).map(c => `<tr><td>${c.feature1}</td><td>${c.feature2}</td><td>${c.correlation}</td></tr>`).join('')}
+                            </tbody></table>
+                        ` : `<p>No significant correlations found.</p>`}
+                    </div>
+
+                </body>
+                </html>
+            `;
+
+            if (format === 'html') {
+                const blob = new Blob([html], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${filenameBase}.html`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+                showNotification('✅ HTML report downloaded', 'success');
+                return;
+            }
+
+            if (format === 'pdf') {
+                const win = window.open('', '_blank');
+                if (!win) {
+                    showNotification('Popup blocked — allow popups to export PDF.', 'error');
+                    return;
+                }
+                win.document.write(html);
+                win.document.close();
+                setTimeout(() => { win.print(); }, 600);
+                showNotification('Opened print dialog for PDF export', 'success');
+                return;
+            }
+
+            showNotification('Unsupported export format: ' + format, 'error');
+        }
+
+        // Compare selected datasets (client-side)
+        async function compareSelectedDatasets() {
+            const selector = document.getElementById('comparisonSelector');
+            if (!selector) return;
+
+            const checked = Array.from(selector.querySelectorAll('input[type="checkbox"]:checked')).map(i => i.value);
+            if (checked.length < 2) {
+                showNotification('Select at least 2 datasets to compare', 'error');
+                return;
+            }
+
+            const selected = checked.map(id => allFiles.find(f => String(f.id) === String(id))).filter(Boolean);
+            if (selected.length === 0) {
+                showNotification('Selected datasets not found locally; please refresh.', 'error');
+                return;
+            }
+
+            const grid = document.getElementById('comparisonGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            selected.forEach(f => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <h4>📄 ${f.filename}</h4>
+                    <div style="font-size: 13px; color:#666;">
+                        Rows: ${f.rows ?? '-'} • Columns: ${f.columns ?? '-'} • Size: ${f.size ? (f.size/1024).toFixed(2)+' KB' : '-'}
+                    </div>
+                    <div style="margin-top:10px;">
+                        <strong>Preview:</strong>
+                        <pre style="max-height:200px; overflow:auto; background:#fbfbfb; padding:10px; border-radius:6px; font-size:12px;">${(f.preview && typeof f.preview === 'string') ? f.preview : 'No preview available'}</pre>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            const tableCard = document.createElement('div');
+            tableCard.className = 'card';
+            tableCard.innerHTML = `
+                <h4>Comparison Summary</h4>
+                <table>
+                    <thead><tr><th>Filename</th><th>Rows</th><th>Columns</th><th>Size (KB)</th></tr></thead>
+                    <tbody>
+                        ${selected.map(f => `<tr><td>${f.filename}</td><td>${f.rows ?? '-'}</td><td>${f.columns ?? '-'}</td><td>${f.size ? (f.size/1024).toFixed(2) : '-'}</td></tr>`).join('')}
+                    </tbody>
+                </table>
+            `;
+            grid.appendChild(tableCard);
+        }
+
+        function toggleFeature(feature) {
+            if (!feature) return;
+            const toggleId = 'toggle' + feature.toUpperCase()[0] + feature.slice(1);
+            const toggle = document.getElementById(toggleId);
+            if (toggle) toggle.classList.toggle('active');
+        }
+
+        function saveConfig() {
+            const anomalyThresholdEl = document.getElementById('anomalyThreshold');
+            const correlationThresholdEl = document.getElementById('correlationThreshold');
+
+            const anomalyThreshold = anomalyThresholdEl ? Number(anomalyThresholdEl.value) : null;
+            const correlationThreshold = correlationThresholdEl ? Number(correlationThresholdEl.value) : null;
+
+            if (!anomalyThreshold || anomalyThreshold <= 0) {
+                showNotification('Invalid anomaly threshold', 'error');
+                return;
+            }
+            if (correlationThreshold === null || correlationThreshold < 0 || correlationThreshold > 1) {
+                showNotification('Correlation threshold must be between 0 and 1', 'error');
+                return;
+            }
+
+            const config = {
+                anomalyThreshold,
+                correlationThreshold,
+                llm: document.getElementById('toggleLLM') ? document.getElementById('toggleLLM').classList.contains('active') : false,
+                sdg: document.getElementById('toggleSDG') ? document.getElementById('toggleSDG').classList.contains('active') : false,
+                geo: document.getElementById('toggleGeo') ? document.getElementById('toggleGeo').classList.contains('active') : false,
+                causality: document.getElementById('toggleCausality') ? document.getElementById('toggleCausality').classList.contains('active') : false
+            };
+            localStorage.setItem('aeidsConfig', JSON.stringify(config));
+            showNotification('✅ Configuration saved!', 'success');
+        }
+
+        function loadConfig() {
+            const config = JSON.parse(localStorage.getItem('aeidsConfig') || '{}');
+            if (config.anomalyThreshold && document.getElementById('anomalyThreshold')) document.getElementById('anomalyThreshold').value = config.anomalyThreshold;
+            if (config.correlationThreshold && document.getElementById('correlationThreshold')) document.getElementById('correlationThreshold').value = config.correlationThreshold;
+            if (config.llm && document.getElementById('toggleLLM')) document.getElementById('toggleLLM').classList.add('active');
+            if (config.sdg && document.getElementById('toggleSDG')) document.getElementById('toggleSDG').classList.add('active');
+            if (config.geo && document.getElementById('toggleGeo')) document.getElementById('toggleGeo').classList.add('active');
+            if (config.causality && document.getElementById('toggleCausality')) document.getElementById('toggleCausality').classList.add('active');
+        }
+
+        function resetConfig() {
+            localStorage.removeItem('aeidsConfig');
+            if (document.getElementById('anomalyThreshold')) document.getElementById('anomalyThreshold').value = 3;
+            if (document.getElementById('correlationThreshold')) document.getElementById('correlationThreshold').value = 0.7;
+            showNotification('Configuration reset to defaults', 'info');
+        }
+
+        function updateStatus(status) {
+            const el = document.getElementById('systemStatus');
+            if (el) el.textContent = status;
+        }
+
+        function showProgress(percent) {
+            const bar = document.getElementById('uploadProgress');
+            const fill = document.getElementById('uploadProgressFill');
+            if (bar && fill) {
+                bar.style.display = 'block';
+                fill.style.width = percent + '%';
+            }
+        }
+
+        function hideProgress() {
+            setTimeout(() => {
+                const bar = document.getElementById('uploadProgress');
+                const fill = document.getElementById('uploadProgressFill');
+                if (bar && fill) {
+                    bar.style.display = 'none';
+                    fill.style.width = '0%';
+                }
+            }, 1000);
+        }
+
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            if (!notification) { console.log(`[${type || 'info'}] ${message}`); return; }
+            notification.textContent = message;
+            notification.className = 'notification show';
+            notification.style.background = type === 'error' ? '#ffe0e0' :
+                                          type === 'success' ? '#e8f5e9' : '#e3f2fd';
+            notification.style.color = '#111827';
+            setTimeout(() => { notification.classList.remove('show'); }, 3000);
+        }
+            // ========================================================================
+    // 🤖 NEXUS BOT LOGIC
+    // ========================================================================
+    let currentImage = null;
+
+    function toggleChat() {
+        const win = document.getElementById('nexus-chat-window');
+        if (!win) return;
+        win.style.display = (win.style.display === 'none' || !win.style.display)
+            ? 'flex'
+            : 'none';
+    }
+
+    function handleImageUpload() {
+        const fileInput = document.getElementById('image-input');
+        if (fileInput && fileInput.files.length > 0) {
+            currentImage = fileInput.files[0];
+            const preview = document.getElementById('image-preview');
+            if (preview) {
+                preview.style.display = 'block';
+                preview.innerText = "📷 " + currentImage.name;
+            }
+        }
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('user-input');
+        const messages = document.getElementById('chat-messages');
+        const query = (input?.value || '').trim();
+
+        if (!query && !currentImage) return;
+        if (!messages) return;
+
+        // user bubble
+        const userDiv = document.createElement('div');
+        userDiv.style.cssText =
+            "background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); " +
+            "color: white; padding: 12px; border-radius: 12px; " +
+            "border-bottom-right-radius: 0; margin-bottom: 10px; " +
+            "max-width: 85%; align-self: flex-end; margin-left: auto; font-size: 14px;";
+        userDiv.innerHTML = `<b>You:</b><br>${query || ''} ${currentImage ? '<br><i>[Image Attached]</i>' : ''}`;
+        messages.appendChild(userDiv);
+
+        if (input) input.value = '';
+        messages.scrollTop = messages.scrollHeight;
+
+        // loading bubble
+        const loadingDiv = document.createElement('div');
+        loadingDiv.id = "nexus-loading-msg";
+        loadingDiv.style.cssText =
+            "background: #e2e8f0; padding: 12px; border-radius: 12px; " +
+            "margin-bottom: 10px; max-width: 85%; color: #64748b; font-style: italic;";
+        loadingDiv.innerHTML = "🧠 NEXUS is thinking...";
+        messages.appendChild(loadingDiv);
+
+        try {
+            const formData = new FormData();
+            formData.append('query', query || "Analyze this image");
+            formData.append('language', 'English');
+            if (currentImage) formData.append('image', currentImage);
+
+            // NOTE: uses the same API_BASE used by the rest of AEIDS
+            const resp = await fetch(`${API_BASE}/nexus/chat`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await resp.json();
+            loadingDiv.remove();
+
+            const botDiv = document.createElement('div');
+            botDiv.style.cssText =
+                "background: #e2e8f0; padding: 12px; border-radius: 12px; " +
+                "border-bottom-left-radius: 0; margin-bottom: 10px; " +
+                "max-width: 85%; font-size: 14px; line-height: 1.5; color: #1e293b;";
+
+            let formattedText = (data.response || '').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+            botDiv.innerHTML = `<b>NEXUS:</b><br>${formattedText}`;
+            messages.appendChild(botDiv);
+
+            // reset image state
+            currentImage = null;
+            const imgInput = document.getElementById('image-input');
+            const imgPreview = document.getElementById('image-preview');
+            if (imgInput) imgInput.value = '';
+            if (imgPreview) imgPreview.style.display = 'none';
+        } catch (err) {
+            console.error(err);
+            loadingDiv.innerHTML = "⚠️ Error: Connection to NEXUS lost.";
+        }
+
+        messages.scrollTop = botDiv.offsetTop;
+    }
+
+    // Enter key handler
+    const nexusUserInput = document.getElementById('user-input');
+    if (nexusUserInput) {
+        nexusUserInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    }
+
+    </script>
+</body>
+</html>

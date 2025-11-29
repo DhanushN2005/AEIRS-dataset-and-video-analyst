@@ -1,0 +1,76 @@
+
+# ============================================================================
+# 2. config.yaml
+# ============================================================================
+# AEIDS Configuration
+app:
+  name: "AEIDS Enterprise"
+  version: "1.0.0"
+  environment: "production"
+  debug: false
+  host: "0.0.0.0"
+  port: 8000
+
+database:
+  url: "postgresql://aeids:password@localhost:5432/aeids"
+  pool_size: 20
+  max_overflow: 40
+  echo: false
+
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+  password: null
+
+security:
+  secret_key: "your-secret-key-change-in-production"
+  algorithm: "HS256"
+  access_token_expire_minutes: 30
+
+analysis:
+  anomaly_threshold: 3.0
+  correlation_threshold: 0.7
+  min_data_points: 10
+  enable_llm: true
+  enable_sdg: true
+  enable_geo: true
+  
+detection:
+  methods:
+    - zscore
+    - isolation_forest
+    - lof
+    - rolling_mad
+  ensemble_strategy: "voting"
+  contamination: 0.1
+
+llm:
+  provider: "openai"  # openai, anthropic, local
+  model: "gpt-4-turbo-preview"
+  api_key: null
+  temperature: 0.7
+  max_tokens: 1000
+
+alerts:
+  email:
+    enabled: false
+    smtp_server: "smtp.gmail.com"
+    smtp_port: 587
+    sender: "717823i108@kce.ac.in"
+    recipients: []
+  
+  slack:
+    enabled: false
+    webhook_url: null
+    channel: "#alerts"
+
+storage:
+  upload_dir: "./uploads"
+  output_dir: "./outputs"
+  max_file_size: 524288000  # 500MB
+
+monitoring:
+  prometheus_enabled: true
+  sentry_dsn: null
+  log_level: "INFO"

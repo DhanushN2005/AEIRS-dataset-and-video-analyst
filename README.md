@@ -131,8 +131,6 @@ AEIRS-DATA-and-VIDEO-REPORTER/
 
 ### 1️⃣ Clone Repository
 
-git clone https://github.com/gowthamx25/AEIRS-DATA-and-VIDEO-REPORTER.git
-
 cd AEIRS-DATA-and-VIDEO-REPORTER/AEIRS
 
 ### 2️⃣ Install Dependencies
@@ -180,10 +178,4 @@ Always use environment variables or secret managers.
 - Streaming video analysis
 - Model switching support
 
-## 👤 Author
 
-Gowtham S
-
-AI & Data Science | MLOps & Intelligent Systems
-
-GitHub: https://github.com/gowthamx25
